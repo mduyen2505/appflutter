@@ -1,4 +1,4 @@
-// const timespan = require("jsonwebtoken/lib/timespan");
+const timespan = require("jsonwebtoken/lib/timespan");
 
 const mongoose = require ('mongoose')
 const productSchema = new mongoose.Schema(

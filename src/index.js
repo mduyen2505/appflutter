@@ -1,16 +1,21 @@
 const express = require("express");
 const dotenv = require('dotenv');
 const { default: mongoose } = require("mongoose");
+const routes = require("./routes");
+const bodyParser = require("body-parser");
 dotenv.config()
+
 
 const app = express()
 const port = process.env.PORT || 3001 
 
-app.get('/', (req, res) =>{
-    res.send('Hello')
-})
 
-mongoose.connect(`mongodb+srv://ngocduyxx1508:${process.env.MONGO_DB}@cluster0.2mkxj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`)
+
+app.use(bodyParser.json())
+routes(app);
+
+
+mongoose.connect(`${process.env.MONGO_DB}`)
 .then(()=> {
     console.log('Conect DB success')
 })

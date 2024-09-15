@@ -1,6 +1,6 @@
-// const mongoose = require ('mongoose')
-// const Product = require('./ProductModel')
-// const { type } = require('express/lib/response')
+const mongoose = require ('mongoose')
+const Product = require('./ProductModel')
+const { type } = require('express/lib/response')
 
 const oderSchema = new mongoose.Schema ({
     oderItems:[
