@@ -8,6 +8,17 @@ const genneralAccessToken = async (payload) => {
 
     return access_token
 }
+
+const genneralRefreshToken = async (payload) => {
+    console.log('payload', payload)
+    const access_token = jwt.sign({
+        payload
+    }, 'refresh_token', {expiresIn: '365d'})
+
+    return access_token
+}
+
 module.exports = {
-    genneralAccessToken
+    genneralAccessToken,
+    genneralRefreshToken
 }
