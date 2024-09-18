@@ -23,6 +23,7 @@ mongoose.connect(`${process.env.MONGO_DB}`)
     console.log(err)
 })
 
+
 app.listen(port, ()=>{
     console.log('Sever is running in port', + port)
 })
