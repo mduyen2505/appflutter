@@ -3,6 +3,7 @@ const User = require('../models/UserModel')
 const bcrypt = require("bcrypt")
 const { genneralAccessToken, genneralRefreshToken } = require('./JwtService')
 
+
 const createUser = (newUser) =>{
     return new Promise(async (resolve, reject) => {
         const {name, email, password, confirmPassword, phone} = newUser
@@ -115,10 +116,80 @@ const updateUser = (id, data) =>{
     })
 }
     
+const deleteUser = (id) =>{
+    return new Promise(async (resolve, reject) => {
+        try {
+            const checkUser = await User.findOne({
+                _id : id
+            })
+                if (checkUser === null){
+                    resolve({
+                        status: 'Oke',
+                        message: 'User is not defined'
+                    })
+                }
+                
+                await User.findByIdAndDelete(id)
+                resolve({
+                    status: 'Oke',
+                    massage: 'delete success',
+                   
+                })
+        
+        }catch(e){
+            reject(e)
+        }
+    })
+}
 
+const getAllUser = () =>{
+    return new Promise(async (resolve, reject) => {
+        try {
+               const allUser = await User.find()
+                resolve({
+                    status: 'Oke',
+                    massage: 'success',
+                    data: allUser
+                   
+                })
+        
+        }catch(e){
+            reject(e)
+        }
+    })
+}
+
+const getDetailsUser = (id) =>{
+    return new Promise(async (resolve, reject) => {
+        try {
+            const user = await User.findOne({
+                _id : id
+            })
+                if (user === null){
+                    resolve({
+                        status: 'Oke',
+                        message: 'User is not defined'
+                    })
+                }
+                
+                resolve({
+                    status: 'Oke',
+                    massage: 'success',
+                    data: user
+                   
+                })
+        
+        }catch(e){
+            reject(e)
+        }
+    })
+}
 
 module.exports = {
     createUser,
     loginUser,
-    updateUser
+    updateUser,
+    deleteUser, 
+    getAllUser,
+    getDetailsUser
 }
