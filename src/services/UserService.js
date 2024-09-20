@@ -56,7 +56,6 @@ const loginUser = (userLogin) =>{
                 })
             }
             const comparePassword = bcrypt.compareSync(password, checkUser.password)
-                console.log('comparePassword', comparePassword)
             
             if(!comparePassword){
                 resolve({
@@ -132,7 +131,7 @@ const deleteUser = (id) =>{
                 await User.findByIdAndDelete(id)
                 resolve({
                     status: 'Oke',
-                    massage: 'delete success',
+                    massage: 'delete success'
                    
                 })
         
@@ -184,6 +183,7 @@ const getDetailsUser = (id) =>{
         }
     })
 }
+
 
 module.exports = {
     createUser,
