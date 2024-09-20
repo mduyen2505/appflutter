@@ -22,7 +22,6 @@ const genneralRefreshToken = async (payload) => {
 const refreshTokenJwtService = (token) => {
     return new Promise( (resolve, reject) => {
         try {
-                console.log('token', token)
                 jwt.verify(token, process.env.REFRESH_TOKEN, async (err, user) => {
                     if(err){
                         resolve({
@@ -40,10 +39,8 @@ const refreshTokenJwtService = (token) => {
                     status: 'Oke',
                     massage: 'success',
                     access_token
-                })
-                   
-                })
-        
+                })                   
+                })       
         }catch(e){
             reject(e)
         }

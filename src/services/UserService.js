@@ -40,7 +40,6 @@ const createUser = (newUser) =>{
     })
 }
 
-
 const loginUser = (userLogin) =>{
     return new Promise(async (resolve, reject) => {
         const {name, email, password, confirmPassword, phone} = userLogin
