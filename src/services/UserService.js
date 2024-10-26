@@ -31,7 +31,7 @@ const createUser = (newUser) =>{
                 resolve({
                     status: 'Oke',
                     massage: 'Success',
-                    data: createdUser
+                    // data: createdUser
                 })
             }
         }catch(e){
@@ -40,37 +40,39 @@ const createUser = (newUser) =>{
     })
 }
 
-const loginUser = (userLogin) =>{
-    return new Promise(async (resolve, reject) => {
-        const {name, email, password, confirmPassword, phone} = userLogin
 
+const loginUser = (userLogin) => {
+    return new Promise(async (resolve, reject) => {
+        const { email, password } = userLogin
         try {
             const checkUser = await User.findOne({
                 email: email
-            })
-            if (checkUser === null){
-                resolve({
-                    status: 'Oke',
-                    message: 'User is not defined'
-                })
-            }
-            const comparePassword = bcrypt.compareSync(password, checkUser.password)
-            
-            if(!comparePassword){
-                resolve({
-                    status: 'Oke',
-                    message: 'User or password incorrect'
-                })
-            }
-            const access_token = await genneralAccessToken({
-                id: checkUser.id,
-                isAdmin: checkUser.isAdmin 
-            })
+            });
 
-            const refresh_token = await genneralRefreshToken({
+            if (!checkUser) {
+                resolve({
+                    status: 'ERR',
+                    message: 'User is not defined'
+                });
+                return; 
+            }
+        const comparePassword = bcrypt.compareSync(password, checkUser.password);
+        if (!comparePassword) {
+                resolve({
+                    status: 'ERR',
+                    message: 'User or password incorrect'
+                });
+                return;
+        }
+        const access_token = await genneralAccessToken({
                 id: checkUser.id,
                 isAdmin: checkUser.isAdmin 
-            })
+        })
+
+        const refresh_token = await genneralRefreshToken({
+                id: checkUser.id,
+                isAdmin: checkUser.isAdmin 
+        })
 
             console.log('access_token', access_token)
                 resolve({
@@ -98,15 +100,15 @@ const updateUser = (id, data) =>{
                         message: 'User is not defined'
                     })
                 }
-                
-                const updatedUser = await User.findByIdAndUpdate(id, data, { new : true})
-
-                resolve({
-                    status: 'Oke',
-                    massage: 'Success',
-                    data: updatedUser
-                   
-                })
+                else{
+                    const updatedUser = await User.findByIdAndUpdate(id, data, { new : true})    
+                    resolve({
+                        status: 'Oke',
+                        message: 'Success',
+                        data: updatedUser
+                       
+                    })
+                }
         
         }catch(e){
             reject(e)
@@ -137,6 +139,21 @@ const deleteUser = (id) =>{
         }catch(e){
             reject(e)
         }
+    })
+}
+
+const deleteManyUser = (ids) =>{
+    return new Promise(async (resolve, reject) => {
+      try {   
+        await User.deleteMany({_id: ids})
+        resolve({
+          status: 'Oke',
+          massage: 'delete success'
+                     
+        })        
+      }catch(e){
+              reject(e)
+      }
     })
 }
 
@@ -188,7 +205,8 @@ module.exports = {
     createUser,
     loginUser,
     updateUser,
-    deleteUser, 
+    deleteUser,
+    deleteManyUser, 
     getAllUser,
     getDetailsUser
 }
