@@ -3,23 +3,33 @@
 const ProductService = require('../services/ProductService') 
 
 const createProduct = async (req, res) => {
-    try{
-        const {name, image, type, price, countInStock, rating, description} = req.body 
+    try {
+        console.log('Request body received:', req.body);  // Log the request body
 
-        if (!name || !image || !type || !price || !countInStock || !rating){
-            return res.status(200).json({
+        const { name, productsTypeName, quantityInStock, prices, inches, screenResolution, imageUrl, bannerUrl, company, cpu, ram, memory, gpu, weight } = req.body;
+
+        // Ensure all required fields are present
+        if (!name || !productsTypeName || !quantityInStock || !prices || !inches || !screenResolution || !imageUrl || !bannerUrl || !company || !cpu || !ram || !memory || !gpu || !weight) {
+            return res.status(400).json({
                 status: 'ERR',
-                message: 'the input is required'
-            })
+                message: 'The input is required',
+            });
         }
-       const response = await ProductService.createProduct(req.body)
-        return res.status(200).json(response)
-    }catch(e){
-        return res.status(404).json({
-            message: e
-        })
+
+        // If all fields are present, proceed with creating the product
+        const response = await ProductService.createProduct(req.body);
+        return res.status(201).json(response);
+    } catch (e) {
+        return res.status(500).json({
+            status: 'ERR',
+            message: 'Something went wrong',
+            error: e.message,
+        });
     }
-}
+};
+
+
+
 
 const updateProduct = async (req, res) => {
     try{
