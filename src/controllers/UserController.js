@@ -38,6 +38,7 @@ const loginUser = async (req, res) => {
         });
     }
     const response = await UserService.loginUser(req.body);
+    
     if (response.status === 'ERR') {
       return res.status(400).json({
           status: 'ERR',

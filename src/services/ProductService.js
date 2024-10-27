@@ -179,6 +179,22 @@ const getDetailsProduct = (id) =>{
     })
 }
 
+const getAllType = () =>{
+    return new Promise(async (resolve, reject) => {
+        try {
+                const allType = await Product.distinct('type')
+                resolve({
+                    status: 'Oke',
+                    massage: 'success',
+                    data: allType
+                })
+        
+        }catch(e){
+            reject(e)
+        }
+    })
+}
+
 
 module.exports = {
     createProduct,
@@ -186,5 +202,6 @@ module.exports = {
     getDetailsProduct,
     deleteProduct,
     deleteManyProduct,
-    getAllProduct
+    getAllProduct,
+    getAllType
 }   
