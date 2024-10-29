@@ -67,6 +67,7 @@ const loginUser = async (req, res) => {
 // }
 
 const updateUser = async (req, res) => {
+  console.log(req.body);
   try {
     const userId = req.params.id;
     const data = req.body;
@@ -91,17 +92,18 @@ const deleteUser = async (req, res) => {
   try {
     const userId = req.params.id;
     if (!userId) {
-      return res.status(200).json({
+      return res.status(400).json({
         status: "ERR",
-        message: "the userId is required "
+        message: "The userId is required"
       });
     }
-    console.log("userId", userId);
+
     const response = await UserService.deleteUser(userId);
     return res.status(200).json(response);
   } catch (e) {
-    return res.status(404).json({
-      message: e
+    return res.status(500).json({
+      message: "Server error",
+      error: e.message
     });
   }
 };

@@ -112,23 +112,21 @@ const updateUser = (id, data) => {
   });
 };
 
-const deleteUser = (id) => {
+const deleteUser = async (id) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const checkUser = await User.findOne({
-        _id: id
-      });
+      const checkUser = await User.findOne({ _id: id });
       if (checkUser === null) {
-        resolve({
-          status: "Oke",
+        return resolve({
+          status: "ERR",
           message: "User is not defined"
         });
       }
 
       await User.findByIdAndDelete(id);
       resolve({
-        status: "Oke",
-        massage: "delete success"
+        status: "OK",
+        message: "Delete success"
       });
     } catch (e) {
       reject(e);

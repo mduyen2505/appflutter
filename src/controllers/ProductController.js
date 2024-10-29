@@ -97,19 +97,30 @@ const updateProduct = async (req, res) => {
     const data = req.body;
 
     if (!productId) {
-      return res.status(200).json({
+      return res.status(400).json({
         status: "ERR",
         message: "the productId is required "
       });
     }
+
+    if (req.files) {
+      if (req.files.imageFile) {
+        data.imageUrl = req.files.imageFile[0].filename;
+      }
+      if (req.files.bannerFile) {
+        data.bannerUrl = req.files.bannerFile[0].filename;
+      }
+    }
+
     const response = await ProductService.updateProduct(productId, data);
     return res.status(200).json(response);
   } catch (e) {
-    return res.status(404).json({
-      message: e
+    return res.status(500).json({
+      message: e.message
     });
   }
 };
+
 const deleteProduct = async (req, res) => {
   try {
     const productId = req.params.id;
