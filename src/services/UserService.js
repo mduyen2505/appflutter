@@ -1,4 +1,3 @@
-// const { status } = require('express/lib/response')
 const User = require("../models/UserModel");
 const bcrypt = require("bcrypt");
 const { genneralAccessToken, genneralRefreshToken } = require("./JwtService");
@@ -18,7 +17,6 @@ const createUser = (newUser) => {
         });
       }
       const hash = bcrypt.hashSync(password, 10);
-      console.log("hash", hash);
       const createdUser = await User.create({
         name,
         email,
@@ -116,9 +114,10 @@ const deleteUser = async (id) => {
   return new Promise(async (resolve, reject) => {
     try {
       const checkUser = await User.findOne({ _id: id });
+      console.log(checkUser);
       if (checkUser === null) {
-        return resolve({
-          status: "ERR",
+        return reject({
+          status: 404,
           message: "User is not defined"
         });
       }
