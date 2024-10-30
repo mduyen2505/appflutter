@@ -15,14 +15,12 @@ const createCart = async (newCart) => {
         });
       }
 
-      // Nếu giỏ hàng chưa tồn tại, tạo mới giỏ hàng
       const newCartEntry = new Cart({
         userId,
         products,
-        totalPrice: 0 // Có thể tính sau
+        totalPrice: 0
       });
 
-      // Tính tổng số tiền
       newCartEntry.totalPrice = products.reduce(
         (total, product) => total + product.quantity * product.prices,
         0
@@ -80,10 +78,8 @@ const updateCart = async (userId, productId, quantity) => {
         (p) => p.productId.toString() === productId
       );
       if (productIndex > -1) {
-        // Sản phẩm đã có trong giỏ hàng, cập nhật số lượng
         cart.products[productIndex].quantity = quantity;
       } else {
-        // Thêm sản phẩm mới vào giỏ hàng
         const productDetails = await Product.findById(productId);
         cart.products.push({
           productId,
@@ -92,7 +88,6 @@ const updateCart = async (userId, productId, quantity) => {
         });
       }
 
-      // Cập nhật tổng số tiền
       cart.totalPrice = cart.products.reduce(
         (total, product) => total + product.quantity * product.prices,
         0
@@ -129,7 +124,6 @@ const removeProductFromCart = async (userId, productId) => {
         (p) => p.productId.toString() !== productId
       );
 
-      // Cập nhật tổng số tiền
       cart.totalPrice = cart.products.reduce(
         (total, product) => total + product.quantity * product.prices,
         0

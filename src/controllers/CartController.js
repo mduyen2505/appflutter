@@ -1,6 +1,5 @@
 const CartService = require("../services/CartSevice");
 
-// Tạo hoặc cập nhật giỏ hàng
 const createCart = async (req, res) => {
   try {
     console.log("req.body:", req.body);
@@ -22,7 +21,6 @@ const createCart = async (req, res) => {
   }
 };
 
-// Lấy giỏ hàng của người dùng theo userId
 const getCartByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -42,7 +40,6 @@ const getCartByUserId = async (req, res) => {
   }
 };
 
-// Cập nhật giỏ hàng
 const updateCart = async (req, res) => {
   const { userId, productId } = req.params;
   const { quantity } = req.body;
@@ -56,7 +53,6 @@ const updateCart = async (req, res) => {
   }
 };
 
-// Xóa sản phẩm khỏi giỏ hàng
 const removeProductFromCart = async (req, res) => {
   const { userId, productId } = req.params;
   try {
@@ -69,7 +65,6 @@ const removeProductFromCart = async (req, res) => {
   }
 };
 
-// Xóa giỏ hàng
 const deleteCart = async (req, res) => {
   const { userId } = req.params;
   try {
