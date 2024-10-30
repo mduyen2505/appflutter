@@ -6,7 +6,6 @@ const createCart = async (newCart) => {
     try {
       const { userId, products } = newCart;
 
-      // Kiểm tra xem giỏ hàng đã tồn tại cho userId chưa
       const existingCart = await Cart.findOne({ userId });
       if (existingCart) {
         return resolve({

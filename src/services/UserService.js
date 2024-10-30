@@ -44,6 +44,7 @@ const loginUser = (userLogin) => {
         email: email
       });
       const isAdmin = checkUser.isAdmin;
+      const id = checkUser._id;
       if (!checkUser) {
         resolve({
           status: "ERR",
@@ -73,7 +74,7 @@ const loginUser = (userLogin) => {
       resolve({
         status: "Oke",
         massage: "Success",
-        dataUser: { email, password, isAdmin },
+        dataUser: { id, email, password, isAdmin },
         access_token,
         refresh_token
       });
