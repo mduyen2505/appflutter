@@ -140,7 +140,7 @@ const getAllProduct = async (limit, page, sort, filter) => {
 
       const formattedProducts = allProducts.map((product) => ({
         ...product.toObject(),
-        imageUrl: product.imageUrl.split("/").pop(),
+        imageUrl: product.imageUrl ? product.imageUrl.split("/").pop() : null,
         bannerUrl: product.bannerUrl ? product.bannerUrl.split("/").pop() : null
       }));
 
