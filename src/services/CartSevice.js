@@ -63,7 +63,7 @@ const addOrUpdateProductInCart = async (req, res) => {
 
         // Chuyển đổi thành đối tượng thông thường và xóa trường _id
         const response = cart.toObject(); // Chuyển đổi thành đối tượng thông thường
-        response.products = response.products.map(product => {
+response.products = response.products.map(product => {
             const { _id, ...rest } = product; // Tách _id và giữ lại các trường còn lại
             return rest; // Trả về đối tượng không có _id
         });
@@ -144,10 +144,7 @@ const addOrUpdateProductInCart = async (req, res) => {
         }
     });
 };
-
-
-  
-  // Xóa toàn bộ giỏ hàng của người dùng
+// Xóa toàn bộ giỏ hàng của người dùng
   const deleteCart = async (userId) => {
     try {
       const cart = await Cart.findOneAndDelete({ userId }).populate("products.productId", "name prices");

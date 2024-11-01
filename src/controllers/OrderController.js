@@ -1,17 +1,13 @@
-// const json = require("body-parser/lib/types/json")
-// const { status } = require("express/lib/response")
 const OrderService = require("../services/OrderService");
 
 const createOrder = async (req, res) => {
   try {
     console.log("req.body:", req.body);
 
-    // Lấy shippingAddress từ req.body
     const { paymentMethod, itemsPrice, shippingPrice, totalPrice, user } =
       req.body;
     const { fullName, address, city, phone } = req.body.shippingAddress;
 
-    // Log để kiểm tra từng trường
     console.log("paymentMethod:", paymentMethod);
     console.log("itemsPrice:", itemsPrice);
     console.log("shippingPrice:", shippingPrice);
@@ -22,7 +18,6 @@ const createOrder = async (req, res) => {
     console.log("phone:", phone);
     console.log("user:", user);
 
-    // Kiểm tra các trường cần thiết
     if (
       !paymentMethod ||
       !itemsPrice ||
@@ -40,7 +35,6 @@ const createOrder = async (req, res) => {
       });
     }
 
-    // Gọi service để tạo order
     const response = await OrderService.createOrder(req.body);
     return res.status(200).json(response);
   } catch (e) {

@@ -66,8 +66,7 @@ const calculateTotalPrice = async (products) => {
             console.error(`Product not found in DB for ID: ${product.productId}`);
             continue; // Nếu không tìm thấy sản phẩm, bỏ qua
         }
-
-        const productPrice = productInDB.prices; // Lấy giá sản phẩm từ cơ sở dữ liệu
+const productPrice = productInDB.prices; // Lấy giá sản phẩm từ cơ sở dữ liệu
         if (isNaN(productPrice) || productPrice < 0) {
             console.error(`Invalid price for product ID ${product.productId}:`, productPrice);
             continue; // Giữ nguyên tổng nếu giá sản phẩm không hợp lệ

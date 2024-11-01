@@ -14,7 +14,8 @@ app.use(bodyParser.json());
 routes(app);
 const path = require("path");
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
+app.use(bodyParser.json({ limit: "100mb" }));
+app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
 mongoose
   .connect(`${process.env.MONGO_DB}`)
   .then(() => {

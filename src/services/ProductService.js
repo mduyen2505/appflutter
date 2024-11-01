@@ -1,5 +1,7 @@
 const Product = require("../models/ProductModel");
 const bcrypt = require("bcrypt");
+const fs = require("fs");
+const path = require("path");
 
 const createProduct = (newProduct) => {
   return new Promise(async (resolve, reject) => {
@@ -20,15 +22,14 @@ const createProduct = (newProduct) => {
       weight
     } = newProduct;
     try {
-      const checkProduct = await Product.findOne({
-        name: name
-      });
-      if (checkProduct != null) {
-        resolve({
-          status: "Oke",
-          message: "Name of product is already"
+      const checkProduct = await Product.findOne({ name });
+      if (checkProduct) {
+        return reject({
+          status: "ERR",
+          message: "Product with this name already exists"
         });
       }
+
       const createdProduct = await Product.create({
         name,
         productsTypeName,
@@ -45,15 +46,20 @@ const createProduct = (newProduct) => {
         gpu,
         weight
       });
+
       if (createdProduct) {
         resolve({
-          status: "Oke",
-          massage: "Success",
+          status: "OK",
+          message: "Product created successfully",
           data: createdProduct
         });
       }
     } catch (e) {
-      reject(e);
+      reject({
+        status: "ERR",
+        message: "Failed to create product",
+        error: e.message
+      });
     }
   });
 };
@@ -123,38 +129,65 @@ const deleteManyProduct = (ids) => {
   });
 };
 
-const getAllProduct = async (limit, page, sort, filter) => {
+const getAllProduct = async (sort, filter) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const totalProduct = await Product.countDocuments();
-
       let query = {};
       if (filter) {
         const label = filter[0];
-        query[label] = { $regex: filter[1] };
+        query[label] = { $regex: filter[1], $options: "i" };
       }
 
-      const allProducts = await Product.find(query)
-        .limit(limit)
-        .skip(page * limit);
+      const allProducts = await Product.find(query).sort(sort ? sort : {});
 
-      const formattedProducts = allProducts.map((product) => ({
-        ...product.toObject(),
-        imageUrl: product.imageUrl ? product.imageUrl.split("/").pop() : null,
-        bannerUrl: product.bannerUrl ? product.bannerUrl.split("/").pop() : null
-      }));
+      const formattedProducts = await Promise.all(
+        allProducts.map(async (product) => {
+          const imageUrlPath = product.imageUrl
+            ? path.resolve(__dirname, "..", product.imageUrl)
+            : null;
+          const bannerUrlPath = product.bannerUrl
+            ? path.resolve(__dirname, "..", product.bannerUrl)
+            : null;
+
+          const imageUrl =
+            imageUrlPath && fs.existsSync(imageUrlPath)
+              ? await convertToBase64(imageUrlPath)
+              : null;
+          const bannerUrl =
+            bannerUrlPath && fs.existsSync(bannerUrlPath)
+              ? await convertToBase64(bannerUrlPath)
+              : null;
+
+          return {
+            ...product.toObject(),
+            imageUrl,
+            bannerUrl
+          };
+        })
+      );
 
       resolve({
         status: "OK",
         message: "success",
         data: formattedProducts,
-        total: totalProduct,
-        pageCurrent: Number(page) + 1,
-        totalPage: Math.ceil(totalProduct / limit)
+        total: formattedProducts.length
       });
     } catch (e) {
       reject(e);
     }
+  });
+};
+
+const convertToBase64 = (filePath) => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        const base64Image = `data:image/jpeg;base64,${data.toString("base64")}`;
+        resolve(base64Image);
+      }
+    });
   });
 };
 

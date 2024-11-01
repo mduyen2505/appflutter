@@ -1,94 +1,111 @@
 const ProductService = require("../services/ProductService");
 const upload = require("../middleware/uploadImage");
+const fs = require("fs");
+const path = require("path");
 const createProduct = async (req, res) => {
-  upload.fields([{ name: "imageFile" }, { name: "bannerFile" }])(
-    req,
-    res,
-    async (err) => {
-      if (err) {
-        return res.status(500).json({
-          status: "ERR",
-          message: "File upload failed",
-          error: err.message
-        });
-      }
-
-      try {
-        const {
-          name,
-          productsTypeName,
-          quantityInStock,
-          prices,
-          inches,
-          screenResolution,
-          company,
-          cpu,
-          ram,
-          memory,
-          gpu,
-          weight
-        } = req.body;
-
-        if (
-          !name ||
-          !productsTypeName ||
-          !quantityInStock ||
-          !prices ||
-          !inches ||
-          !screenResolution ||
-          !company ||
-          !cpu ||
-          !ram ||
-          !memory ||
-          !gpu ||
-          !weight
-        ) {
-          return res.status(400).json({
-            status: "ERR",
-            message: "The input is required"
-          });
-        }
-
-        const imageUrl = req.files["imageFile"]
-          ? req.files["imageFile"][0].path
-          : null;
-        const bannerUrl = req.files["bannerFile"]
-          ? req.files["bannerFile"][0].path
-          : null;
-
-        const productData = {
-          name,
-          productsTypeName,
-          quantityInStock,
-          prices,
-          inches,
-          screenResolution,
-          imageUrl,
-          bannerUrl,
-          company,
-          cpu,
-          ram,
-          memory,
-          gpu,
-          weight
-        };
-
-        const response = await ProductService.createProduct(productData);
-
-        return res.status(201).json({
-          status: "OK",
-          message: "Product created successfully",
-          data: response
-        });
-      } catch (e) {
-        return res.status(500).json({
-          status: "ERR",
-          message: "Something went wrong",
-          error: e.message
-        });
-      }
+  try {
+    const {
+      name,
+      productsTypeName,
+      quantityInStock,
+      prices,
+      inches,
+      screenResolution,
+      imageUrl,
+      bannerUrl,
+      company,
+      cpu,
+      ram,
+      memory,
+      gpu,
+      weight
+    } = req.body;
+    if (
+      !name ||
+      !productsTypeName ||
+      !quantityInStock ||
+      !prices ||
+      !inches ||
+      !screenResolution ||
+      !company ||
+      !cpu ||
+      !ram ||
+      !memory ||
+      !gpu ||
+      !weight
+    ) {
+      return res.status(400).json({
+        status: "ERR",
+        message: "The input is required"
+      });
     }
-  );
+
+    const fs = require("fs");
+    const path = require("path");
+
+    const saveBase64Image = (base64Data, filename, isImageFile) => {
+      const base64String = base64Data.split(";base64,").pop();
+
+      const folder = isImageFile ? "images" : "slides";
+      const filePath = path.join(__dirname, "../uploads", folder, filename);
+
+      const uploadsDir = path.join(__dirname, "../uploads");
+      const specificDir = path.join(uploadsDir, folder);
+
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir);
+      }
+
+      if (!fs.existsSync(specificDir)) {
+        fs.mkdirSync(specificDir);
+      }
+
+      fs.writeFileSync(filePath, base64String, { encoding: "base64" });
+
+      return filePath;
+    };
+
+    const imageFilePath = saveBase64Image(
+      imageUrl,
+      `${Date.now()}_image.jpg`,
+      true
+    );
+    const bannerFilePath = saveBase64Image(
+      bannerUrl,
+      `${Date.now()}_banner.jpg`,
+      false
+    );
+
+    const productData = {
+      name,
+      productsTypeName,
+      quantityInStock,
+      prices,
+      inches,
+      screenResolution,
+      imageUrl: imageFilePath,
+      bannerUrl: bannerFilePath,
+      company,
+      cpu,
+      ram,
+      memory,
+      gpu,
+      weight
+    };
+
+    const response = await ProductService.createProduct(productData);
+    return res.status(201).json({
+      status: "OK",
+      message: "Product created successfully",
+      data: response
+    });
+  } catch (e) {
+    return res.status(500).json({
+      status: "ERR",
+      message: "Something went wrong",
+      error: e.message
+    });
+  }
 };
 
 const updateProduct = async (req, res) => {
@@ -159,13 +176,8 @@ const deleteManyProduct = async (req, res) => {
 
 const getAllProduct = async (req, res) => {
   try {
-    const { limit, page, sort, filter } = req.query;
-    const response = await ProductService.getAllProduct(
-      Number(limit) || 8,
-      Number(page) || 0,
-      sort,
-      filter
-    );
+    const { sort, filter } = req.query;
+    const response = await ProductService.getAllProduct(sort, filter);
     return res.status(200).json(response);
   } catch (error) {
     console.error("Error fetching products:", error);
