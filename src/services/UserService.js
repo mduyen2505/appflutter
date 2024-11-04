@@ -115,7 +115,6 @@ const deleteUser = async (id) => {
   return new Promise(async (resolve, reject) => {
     try {
       const checkUser = await User.findOne({ _id: id });
-      console.log(checkUser);
       if (checkUser === null) {
         return reject({
           status: 404,

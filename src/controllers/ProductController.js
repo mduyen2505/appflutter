@@ -1,139 +1,142 @@
 const ProductService = require("../services/ProductService");
-const upload = require("../middleware/uploadImage");
-const fs = require("fs");
-const path = require("path");
+const admin = require("firebase-admin");
+const multer = require("multer");
+require("dotenv").config();
+const { v4: uuidv4 } = require("uuid");
+const serviceAccount = require("../config/serviceAccountKey.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET
+});
+
+const bucket = admin.storage().bucket();
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+const uploadProductImages = upload.fields([
+  { name: "image", maxCount: 1 },
+  { name: "banner", maxCount: 1 }
+]);
+
 const createProduct = async (req, res) => {
   try {
-    const {
-      name,
-      productsTypeName,
-      quantityInStock,
-      prices,
-      inches,
-      screenResolution,
-      imageUrl,
-      bannerUrl,
-      company,
-      cpu,
-      ram,
-      memory,
-      gpu,
-      weight
-    } = req.body;
-    if (
-      !name ||
-      !productsTypeName ||
-      !quantityInStock ||
-      !prices ||
-      !inches ||
-      !screenResolution ||
-      !company ||
-      !cpu ||
-      !ram ||
-      !memory ||
-      !gpu ||
-      !weight
-    ) {
-      return res.status(400).json({
-        status: "ERR",
-        message: "The input is required"
-      });
+    const data = { ...req.body };
+
+    if (req.files) {
+      if (req.files["image"] && req.files["image"].length > 0) {
+        const imageFile = req.files["image"][0];
+        const imageFileName = `${Date.now()}-${imageFile.originalname}`;
+        const fileUpload = bucket.file(imageFileName);
+        const token = uuidv4();
+
+        await fileUpload.save(imageFile.buffer, {
+          contentType: imageFile.mimetype,
+          metadata: {
+            firebaseStorageDownloadTokens: token
+          }
+        });
+
+        data.imageUrl = `https://firebasestorage.googleapis.com/v0/b/${
+          process.env.REACT_APP_FIREBASE_STORAGE_BUCKET
+        }/o/${encodeURIComponent(imageFileName)}?alt=media&token=${token}`;
+      }
+
+      if (req.files["banner"] && req.files["banner"].length > 0) {
+        const bannerFile = req.files["banner"][0];
+        const bannerFileName = `${Date.now()}-${bannerFile.originalname}`;
+        const fileUpload = bucket.file(bannerFileName);
+        const bannerToken = uuidv4();
+
+        await fileUpload.save(bannerFile.buffer, {
+          contentType: bannerFile.mimetype,
+          metadata: {
+            firebaseStorageDownloadTokens: bannerToken
+          }
+        });
+
+        data.bannerUrl = `https://firebasestorage.googleapis.com/v0/b/${
+          process.env.REACT_APP_FIREBASE_STORAGE_BUCKET
+        }/o/${encodeURIComponent(
+          bannerFileName
+        )}?alt=media&token=${bannerToken}`;
+      }
     }
 
-    const fs = require("fs");
-    const path = require("path");
+    const result = await ProductService.createProduct(data);
 
-    const saveBase64Image = (base64Data, filename, isImageFile) => {
-      const base64String = base64Data.split(";base64,").pop();
-
-      const folder = isImageFile ? "images" : "slides";
-      const filePath = path.join(__dirname, "../uploads", folder, filename);
-
-      const uploadsDir = path.join(__dirname, "../uploads");
-      const specificDir = path.join(uploadsDir, folder);
-
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir);
-      }
-
-      if (!fs.existsSync(specificDir)) {
-        fs.mkdirSync(specificDir);
-      }
-
-      fs.writeFileSync(filePath, base64String, { encoding: "base64" });
-
-      return filePath;
-    };
-
-    const imageFilePath = saveBase64Image(
-      imageUrl,
-      `${Date.now()}_image.jpg`,
-      true
-    );
-    const bannerFilePath = saveBase64Image(
-      bannerUrl,
-      `${Date.now()}_banner.jpg`,
-      false
-    );
-
-    const productData = {
-      name,
-      productsTypeName,
-      quantityInStock,
-      prices,
-      inches,
-      screenResolution,
-      imageUrl: imageFilePath,
-      bannerUrl: bannerFilePath,
-      company,
-      cpu,
-      ram,
-      memory,
-      gpu,
-      weight
-    };
-
-    const response = await ProductService.createProduct(productData);
-    return res.status(201).json({
-      status: "OK",
-      message: "Product created successfully",
-      data: response
-    });
-  } catch (e) {
-    return res.status(500).json({
-      status: "ERR",
-      message: "Something went wrong",
-      error: e.message
-    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Đã xảy ra lỗi khi thêm sản phẩm: " + error.message);
   }
 };
 
 const updateProduct = async (req, res) => {
   try {
     const productId = req.params.id;
-    const data = req.body;
-
+    console.log(req.body);
     if (!productId) {
       return res.status(400).json({
         status: "ERR",
-        message: "the productId is required "
+        message: "The productId is required."
       });
     }
 
+    const data = { ...req.body };
     if (req.files) {
-      if (req.files.imageFile) {
-        data.imageUrl = req.files.imageFile[0].filename;
+      // Xử lý hình ảnh
+      if (req.files["image"] && req.files["image"].length > 0) {
+        const imageFile = req.files["image"][0];
+        const imageFileName = `${Date.now()}-${imageFile.originalname}`;
+        const fileUpload = bucket.file(imageFileName);
+        const token = uuidv4(); // Tạo token duy nhất cho hình ảnh
+
+        await fileUpload.save(imageFile.buffer, {
+          contentType: imageFile.mimetype,
+          metadata: {
+            firebaseStorageDownloadTokens: token
+          }
+        });
+
+        data.imageUrl = `https://firebasestorage.googleapis.com/v0/b/${
+          process.env.REACT_APP_FIREBASE_STORAGE_BUCKET
+        }/o/${encodeURIComponent(imageFileName)}?alt=media&token=${token}`;
       }
-      if (req.files.bannerFile) {
-        data.bannerUrl = req.files.bannerFile[0].filename;
+
+      // Xử lý banner
+      if (req.files["banner"] && req.files["banner"].length > 0) {
+        const bannerFile = req.files["banner"][0];
+        const bannerFileName = `${Date.now()}-${bannerFile.originalname}`;
+        const fileUpload = bucket.file(bannerFileName);
+        const bannerToken = uuidv4(); // Tạo token duy nhất cho banner
+
+        await fileUpload.save(bannerFile.buffer, {
+          contentType: bannerFile.mimetype,
+          metadata: {
+            firebaseStorageDownloadTokens: bannerToken
+          }
+        });
+
+        data.bannerUrl = `https://firebasestorage.googleapis.com/v0/b/${
+          process.env.REACT_APP_FIREBASE_STORAGE_BUCKET
+        }/o/${encodeURIComponent(
+          bannerFileName
+        )}?alt=media&token=${bannerToken}`;
       }
     }
 
-    const response = await ProductService.updateProduct(productId, data);
-    return res.status(200).json(response);
-  } catch (e) {
-    return res.status(500).json({
-      message: e.message
+    // Gọi service để cập nhật sản phẩm vào cơ sở dữ liệu
+    const result = await ProductService.updateProduct(productId, data);
+
+    res.status(200).json(result); // Trả về kết quả
+  } catch (error) {
+    console.error("Error updating product:", error);
+    res.status(500).json({
+      status: "ERR",
+      message: "Error updating product",
+      error: error.message
     });
   }
 };
@@ -218,6 +221,7 @@ const getAllType = async (req, res) => {
 };
 
 module.exports = {
+  uploadProductImages,
   createProduct,
   updateProduct,
   getDetailsProduct,

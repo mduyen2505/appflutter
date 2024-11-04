@@ -5,22 +5,7 @@ const path = require("path");
 
 const createProduct = (newProduct) => {
   return new Promise(async (resolve, reject) => {
-    const {
-      name,
-      productsTypeName,
-      quantityInStock,
-      prices,
-      inches,
-      screenResolution,
-      imageUrl,
-      bannerUrl,
-      company,
-      cpu,
-      ram,
-      memory,
-      gpu,
-      weight
-    } = newProduct;
+    const { name, quantityInStock, prices, imageUrl, bannerUrl } = newProduct;
     try {
       const checkProduct = await Product.findOne({ name });
       if (checkProduct) {
@@ -32,21 +17,11 @@ const createProduct = (newProduct) => {
 
       const createdProduct = await Product.create({
         name,
-        productsTypeName,
         quantityInStock,
         prices,
-        inches,
-        screenResolution,
         imageUrl,
-        bannerUrl,
-        company,
-        cpu,
-        ram,
-        memory,
-        gpu,
-        weight
+        bannerUrl
       });
-
       if (createdProduct) {
         resolve({
           status: "OK",
@@ -67,13 +42,11 @@ const createProduct = (newProduct) => {
 const updateProduct = (id, data) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const checkProduct = await Product.findOne({
-        _id: id
-      });
-      if (checkProduct === null) {
-        resolve({
-          status: "Oke",
-          message: "Product is not defined"
+      const checkProduct = await Product.findById(id);
+      if (!checkProduct) {
+        return resolve({
+          status: "ERR",
+          message: "Product not found"
         });
       }
 
@@ -82,15 +55,20 @@ const updateProduct = (id, data) => {
       });
 
       resolve({
-        status: "Oke",
-        massage: "Success",
+        status: "OK",
+        message: "Product updated successfully",
         data: updatedProduct
       });
     } catch (e) {
-      reject(e);
+      reject({
+        status: "ERR",
+        message: "Error updating product",
+        error: e.message
+      });
     }
   });
 };
+
 const deleteProduct = (id) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -140,31 +118,14 @@ const getAllProduct = async (sort, filter) => {
 
       const allProducts = await Product.find(query).sort(sort ? sort : {});
 
-      const formattedProducts = await Promise.all(
-        allProducts.map(async (product) => {
-          const imageUrlPath = product.imageUrl
-            ? path.resolve(__dirname, "..", product.imageUrl)
-            : null;
-          const bannerUrlPath = product.bannerUrl
-            ? path.resolve(__dirname, "..", product.bannerUrl)
-            : null;
-
-          const imageUrl =
-            imageUrlPath && fs.existsSync(imageUrlPath)
-              ? await convertToBase64(imageUrlPath)
-              : null;
-          const bannerUrl =
-            bannerUrlPath && fs.existsSync(bannerUrlPath)
-              ? await convertToBase64(bannerUrlPath)
-              : null;
-
-          return {
-            ...product.toObject(),
-            imageUrl,
-            bannerUrl
-          };
-        })
-      );
+      // Không cần kiểm tra với fs.existsSync() nếu bạn đang sử dụng URL từ Firebase
+      const formattedProducts = allProducts.map((product) => {
+        return {
+          ...product.toObject(),
+          imageUrl: product.imageUrl || null, // Chỉ cần lấy URL từ MongoDB
+          bannerUrl: product.bannerUrl || null
+        };
+      });
 
       resolve({
         status: "OK",
