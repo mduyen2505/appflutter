@@ -74,9 +74,10 @@ const createProduct = async (req, res) => {
 };
 
 const updateProduct = async (req, res) => {
+  console.log({ ...req.body });
+
   try {
     const productId = req.params.id;
-    console.log(req.body);
     if (!productId) {
       return res.status(400).json({
         status: "ERR",
@@ -84,14 +85,13 @@ const updateProduct = async (req, res) => {
       });
     }
 
-    const data = { ...req.body };
+    const dataUpdate = { ...req.body };
     if (req.files) {
-      // Xử lý hình ảnh
       if (req.files["image"] && req.files["image"].length > 0) {
         const imageFile = req.files["image"][0];
         const imageFileName = `${Date.now()}-${imageFile.originalname}`;
         const fileUpload = bucket.file(imageFileName);
-        const token = uuidv4(); // Tạo token duy nhất cho hình ảnh
+        const token = uuidv4();
 
         await fileUpload.save(imageFile.buffer, {
           contentType: imageFile.mimetype,
@@ -105,12 +105,11 @@ const updateProduct = async (req, res) => {
         }/o/${encodeURIComponent(imageFileName)}?alt=media&token=${token}`;
       }
 
-      // Xử lý banner
       if (req.files["banner"] && req.files["banner"].length > 0) {
         const bannerFile = req.files["banner"][0];
         const bannerFileName = `${Date.now()}-${bannerFile.originalname}`;
         const fileUpload = bucket.file(bannerFileName);
-        const bannerToken = uuidv4(); // Tạo token duy nhất cho banner
+        const bannerToken = uuidv4();
 
         await fileUpload.save(bannerFile.buffer, {
           contentType: bannerFile.mimetype,
@@ -127,10 +126,9 @@ const updateProduct = async (req, res) => {
       }
     }
 
-    // Gọi service để cập nhật sản phẩm vào cơ sở dữ liệu
-    const result = await ProductService.updateProduct(productId, data);
+    const result = await ProductService.updateProduct(productId, dataUpdate);
 
-    res.status(200).json(result); // Trả về kết quả
+    res.status(200).json(result);
   } catch (error) {
     console.error("Error updating product:", error);
     res.status(500).json({

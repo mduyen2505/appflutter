@@ -3,40 +3,59 @@ const bcrypt = require("bcrypt");
 const fs = require("fs");
 const path = require("path");
 
-const createProduct = (newProduct) => {
-  return new Promise(async (resolve, reject) => {
-    const { name, quantityInStock, prices, imageUrl, bannerUrl } = newProduct;
-    try {
-      const checkProduct = await Product.findOne({ name });
-      if (checkProduct) {
-        return reject({
-          status: "ERR",
-          message: "Product with this name already exists"
-        });
-      }
+const createProduct = async (newProduct) => {
+  const {
+    name,
+    quantityInStock,
+    prices,
+    imageUrl,
+    bannerUrl,
+    productsTypeName,
+    inches,
+    screenResolution,
+    company,
+    cpu,
+    ram,
+    memory,
+    gpu,
+    weight
+  } = newProduct;
 
-      const createdProduct = await Product.create({
-        name,
-        quantityInStock,
-        prices,
-        imageUrl,
-        bannerUrl
-      });
-      if (createdProduct) {
-        resolve({
-          status: "OK",
-          message: "Product created successfully",
-          data: createdProduct
-        });
-      }
-    } catch (e) {
-      reject({
-        status: "ERR",
-        message: "Failed to create product",
-        error: e.message
-      });
+  try {
+    const checkProduct = await Product.findOne({ name });
+    if (checkProduct) {
+      throw new Error("Product with this name already exists");
     }
-  });
+
+    const createdProduct = await Product.create({
+      name: name || "", // Nếu không có tên thì để trống
+      quantityInStock: quantityInStock || 0, // Nếu không có thì mặc định là 0
+      prices: prices || 0, // Nếu không có thì mặc định là 0
+      imageUrl: imageUrl || "", // Nếu không có thì để trống
+      bannerUrl: bannerUrl || "", // Nếu không có thì để trống
+      productsTypeName: productsTypeName || "",
+      inches: inches || "",
+      screenResolution: screenResolution || "",
+      company: company || "",
+      cpu: cpu || "",
+      ram: ram || "",
+      memory: memory || "",
+      gpu: gpu || "",
+      weight: weight || ""
+    });
+
+    return {
+      status: "OK",
+      message: "Product created successfully",
+      data: createdProduct
+    };
+  } catch (error) {
+    throw {
+      status: "ERR",
+      message: "Failed to create product",
+      error: error.message
+    };
+  }
 };
 
 const updateProduct = (id, data) => {
