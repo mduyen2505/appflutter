@@ -4,6 +4,7 @@ const CartController = require("../controllers/CartController");
 const router = express.Router();
 
 router.post("/add-update", CartController.addOrUpdateProductInCart);
+router.post("/update", CartController.UpdateProductInCart);
 
 router.get("/get-cart/:userId", CartController.getCartByUserId);
 

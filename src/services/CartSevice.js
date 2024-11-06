@@ -1,73 +1,88 @@
 const Cart = require("../models/CartModel");
 const Product = require("../models/ProductModel");
 
-const addOrUpdateProductInCart = async (req, res) => {
+const addOrUpdateProductInCart = async (userId, productId, quantity) => {
   try {
-    const { userId, productId, quantity } = req.body;
-    // console.log("User ID:", userId);
-    // console.log("Product ID:", productId);
-    // console.log("Quantity:", quantity);
-
-    // console.log("Request Body:", req.body);
-
-    if (!productId) {
-      return res.status(400).json({ message: "Product ID is required" });
-    }
-
     const product = await Product.findById(productId);
     if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+      throw { status: 404, message: "Product not found" };
     }
 
-    let cart = await Cart.findOne({ userId });
-
-    if (cart) {
-      const productIndex = cart.products.findIndex(
-        (p) => p.productId.toString() === productId.toString()
-      );
-
-      if (productIndex > -1) {
-        cart.products[productIndex].quantity += quantity;
-      } else {
-        cart.products.push({ productId, quantity });
-      }
-    } else {
-      cart = new Cart({
-        userId,
-        products: [{ productId, quantity }]
-      });
-    }
-
-    cart.totalPrice = cart.products.reduce((total, product) => {
-      const productInDB =
-        product.productId.toString() === productId.toString() ? product : null;
-      const productPrice = productInDB ? productInDB.prices : 0;
-
-      if (isNaN(productPrice) || productPrice < 0) {
-        console.error(
-          `Invalid prices for product ID ${product.productId}:`,
-          productPrice
-        );
-        return total;
-      }
-
-      return total + productPrice * product.quantity;
-    }, 0);
-
-    await cart.save();
-
-    const response = cart.toObject();
-    response.products = response.products.map((product) => {
-      const { _id, ...rest } = product;
-      return rest;
+    const existingCart = await Cart.findOne({ userId });
+    const cart = existingCart || new Cart({
+      userId,
+      products: [{ productId, quantity }]
     });
 
-    res.status(200).json(response);
+    const productIndex = cart.products.findIndex(
+      (p) => p.productId.toString() === productId.toString()
+    );
+
+    if (productIndex > -1) {
+      cart.products[productIndex].quantity += quantity;
+    } else {
+      cart.products.push({ productId, quantity });
+    }
+
+    // Tính toán `totalPrice` với `for...of`
+    cart.totalPrice = await cart.products.reduce(async (totalPromise, productItem) => {
+      const total = await totalPromise;
+      const productInDB = await Product.findById(productItem.productId);
+      const productPrice = productInDB ? productInDB.prices : 0;
+
+      return total + (isNaN(productPrice) || productPrice < 0 ? 0 : productPrice * productItem.quantity);
+    }, Promise.resolve(0));
+
+    await cart.save();
+    return cart;
   } catch (error) {
-    console.error("Error in addOrUpdateProductInCart:", error);
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    console.error("Error in addOrUpdateProductInCart service:", error);
+    throw { status: 500, message: "Internal server error" };
+  }
+};
+
+const UpdateProductInCart = async (userId, productId, quantity) => {
+  try {
+    const product = await Product.findById(productId);
+    if (!product) {
+      throw { status: 404, message: "Product not found" };
+    }
+
+    const existingCart = await Cart.findOne({ userId });
+    const cart = existingCart || new Cart({
+      userId,
+      products: [{ productId, quantity: Math.max(quantity, 0) }]
+    });
+
+    const productIndex = cart.products.findIndex(
+      (p) => p.productId.toString() === productId.toString()
+    );
+
+    if (productIndex > -1) {
+      const newQuantity = cart.products[productIndex].quantity - quantity;
+      if (newQuantity <= 0) {
+        cart.products.splice(productIndex, 1);
+      } else {
+        cart.products[productIndex].quantity = newQuantity;
+      }
+    } else if (quantity > 0) {
+      cart.products.push({ productId, quantity });
+    }
+
+    // Tính toán `totalPrice`
+    cart.totalPrice = await cart.products.reduce(async (totalPromise, productItem) => {
+      const total = await totalPromise;
+      const productInDB = await Product.findById(productItem.productId);
+      const productPrice = productInDB ? productInDB.prices : 0;
+
+      return total + (isNaN(productPrice) || productPrice < 0 ? 0 : productPrice * productItem.quantity);
+    }, Promise.resolve(0));
+
+    await cart.save();
+    return cart;
+  } catch (error) {
+    console.error("Error in addOrUpdateProductInCart service:", error);
+    throw { status: 500, message: "Internal server error" };
   }
 };
 
@@ -158,6 +173,7 @@ const deleteCart = async (userId) => {
 
 module.exports = {
   addOrUpdateProductInCart,
+  UpdateProductInCart,
   getCartByUserId,
   removeProductFromCart,
   deleteCart

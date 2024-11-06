@@ -16,7 +16,8 @@ const productSchema = new mongoose.Schema(
     ram: { type: String, default: "" },
     memory: { type: String, default: "" },
     gpu: { type: String, default: "" },
-    weight: { type: String, default: "" }
+    weight: { type: String, default: "" },
+    opsys: { type: String, default: "" }
   },
   { timestamps: true }
 );

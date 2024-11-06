@@ -18,15 +18,11 @@ const createProduct = async (newProduct) => {
     ram,
     memory,
     gpu,
-    weight
+    weight,
+    opsys
   } = newProduct;
 
   try {
-    const checkProduct = await Product.findOne({ name });
-    if (checkProduct) {
-      throw new Error("Product with this name already exists");
-    }
-
     const createdProduct = await Product.create({
       name: name || "", // Nếu không có tên thì để trống
       quantityInStock: quantityInStock || 0, // Nếu không có thì mặc định là 0
@@ -41,7 +37,8 @@ const createProduct = async (newProduct) => {
       ram: ram || "",
       memory: memory || "",
       gpu: gpu || "",
-      weight: weight || ""
+      weight: weight || "",
+      opsys: opsys || ""
     });
 
     return {

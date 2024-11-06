@@ -6,66 +6,36 @@ const addOrUpdateProductInCart = async (req, res) => {
   try {
     const { userId, productId, quantity } = req.body;
 
-    if (!productId) {
-      return res.status(400).json({ message: "Product ID is required" });
+    // Kiểm tra đầu vào
+    if (!userId || !productId || !quantity) {
+      return res.status(400).json({ status: "ERR", message: "userId, productId, and quantity are required" });
     }
 
-    const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    let cart = await Cart.findOne({ userId });
-
-    if (cart) {
-      const productIndex = cart.products.findIndex(
-        (p) => p.productId.toString() === productId.toString()
-      );
-
-      if (productIndex > -1) {
-        cart.products[productIndex].quantity += quantity;
-      } else {
-        cart.products.push({ productId, quantity });
-      }
-    } else {
-      cart = new Cart({
-        userId,
-        products: [{ productId, quantity }]
-      });
-    }
-
-    cart.totalPrice = await calculateTotalPrice(cart.products);
-
-    await cart.save();
-    res.status(200).json(cart);
+    // Gọi Service
+    const response = await CartService.addOrUpdateProductInCart(userId, productId, quantity);
+    res.status(200).json({ status: "OK", message: "Cart updated successfully", data: response });
   } catch (error) {
-    console.error("Error in addOrUpdateProductInCart:", error);
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    console.error("Error in addOrUpdateProductInCart Controller:", error);
+    res.status(error.status || 500).json({ status: "ERR", message: error.message || "Internal server error" });
   }
 };
 
-const calculateTotalPrice = async (products) => {
-  let total = 0;
-  for (const product of products) {
-    const productInDB = await Product.findById(product.productId);
-    if (!productInDB) {
-      console.error(`Product not found in DB for ID: ${product.productId}`);
-      continue;
-    }
-    const productPrice = productInDB.prices;
-    if (isNaN(productPrice) || productPrice < 0) {
-      console.error(
-        `Invalid price for product ID ${product.productId}:`,
-        productPrice
-      );
-      continue;
+const UpdateProductInCart = async (req, res) => {
+  try {
+    const { userId, productId, quantity } = req.body;
+
+    // Kiểm tra đầu vào
+    if (!userId || !productId || !quantity) {
+      return res.status(400).json({ status: "ERR", message: "userId, productId, and quantity are required" });
     }
 
-    total += productPrice * product.quantity;
+    // Gọi Service
+    const response = await CartService.UpdateProductInCart(userId, productId, quantity);
+    res.status(200).json({ status: "OK", message: "Cart updated successfully", data: response });
+  } catch (error) {
+    console.error("Error in addOrUpdateProductInCart Controller:", error);
+    res.status(error.status || 500).json({ status: "ERR", message: error.message || "Internal server error" });
   }
-  return total;
 };
 
 const getCartByUserId = async (req, res) => {
@@ -116,6 +86,7 @@ const deleteCart = async (req, res) => {
 
 module.exports = {
   addOrUpdateProductInCart,
+  UpdateProductInCart,
   getCartByUserId,
   removeProductFromCart,
   deleteCart
