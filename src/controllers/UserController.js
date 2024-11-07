@@ -1,27 +1,39 @@
-// const json = require("body-parser/lib/types/json")
-// const { status } = require("express/lib/response")
 const UserService = require("../services/UserService");
 const JwtService = require("../services/JwtService");
+const OTPService = require("../services/OtpService");
+const User = require("../models/UserModel");
+const TempUser = require("../models/tempUserModel");
+const bcrypt = require("bcrypt");
 
 const createUser = async (req, res) => {
   try {
     const { name, email, password, confirmPassword, phone } = req.body;
+
     if (!name || !email || !password || !confirmPassword || !phone) {
-      return res.status(200).json({
+      return res.status(400).json({
         status: "ERR",
-        message: "the input is required"
-      });
-    } else if (password !== confirmPassword) {
-      return res.status(200).json({
-        status: "ERR",
-        message: "the password is equal confirmPassword "
+        message: "All input fields are required"
       });
     }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        status: "ERR",
+        message: "Password and confirm password do not match"
+      });
+    }
+
     const response = await UserService.createUser(req.body);
+
+    if (response.status === "ERR") {
+      return res.status(400).json(response);
+    }
+
     return res.status(200).json(response);
   } catch (e) {
-    return res.status(404).json({
-      message: e
+    return res.status(500).json({
+      status: "ERR",
+      message: "An error occurred while registering the user: " + e.message
     });
   }
 };
@@ -52,20 +64,6 @@ const loginUser = async (req, res) => {
   }
 };
 
-// const logoutUser = async (req, res) => {
-//     try{
-//         res.clearCookie('checkUser')
-//         return res.status(200).json({
-//             status: 'OKE',
-//             message: 'Logout success'
-//         })
-//     }catch(e){
-//         return res.status(400).json({
-//             message: e
-//         })
-//     }
-// }
-
 const updateUser = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -77,7 +75,7 @@ const updateUser = async (req, res) => {
         message: "the userId is required "
       });
     }
-    console.log("userId", userId);
+
     const response = await UserService.updateUser(userId, data);
     return res.status(200).json(response);
   } catch (e) {
@@ -88,7 +86,6 @@ const updateUser = async (req, res) => {
 };
 
 const deleteUser = async (req, res) => {
-  console.log(123);
   try {
     const userId = req.params.id;
     if (!userId) {
@@ -125,6 +122,19 @@ const deleteManyUser = async (req, res) => {
     });
   }
 };
+// const logoutUser = async (req, res) => {
+//     try{
+//         res.clearCookie('checkUser')
+//         return res.status(200).json({
+//             status: 'OKE',
+//             message: 'Logout success'
+//         })
+//     }catch(e){
+//         return res.status(400).json({
+//             message: e
+//         })
+//     }
+// }
 
 const getAllUser = async (req, res) => {
   try {
@@ -173,14 +183,93 @@ const refreshToken = async (req, res) => {
   }
 };
 
+const requestPasswordReset = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Email không tồn tại" });
+    }
+
+    const otpToken = await OTPService.sendResetPasswordOTP(email);
+
+    const hashedPassword = bcrypt.hashSync(otpToken, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({
+      message: "Mật khẩu tạm thời đã được gửi đến email của bạn."
+    });
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    res.status(500).json({ message: "Đã xảy ra lỗi khi đặt lại mật khẩu." });
+  }
+};
+const changePassword = async (req, res) => {
+  const { currentPassword, newPassword, confirmNewPassword } = req.body;
+  const userId = req.params.id;
+
+  console.log(userId, currentPassword, newPassword, confirmNewPassword);
+  try {
+    if (!userId || !currentPassword || !newPassword || !confirmNewPassword) {
+      return res.status(400).json({
+        status: "ERR",
+        message: "All fields are required"
+      });
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      return res.status(400).json({
+        status: "ERR",
+        message: "New password and confirm password do not match"
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        status: "ERR",
+        message: "User not found"
+      });
+    }
+
+    const isPasswordMatch = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+    if (!isPasswordMatch) {
+      return res.status(400).json({
+        status: "ERR",
+        message: "Current password is incorrect"
+      });
+    }
+
+    const hashedNewPassword = bcrypt.hashSync(newPassword, 10);
+    user.password = hashedNewPassword;
+    await user.save();
+
+    return res.status(200).json({
+      status: "OK",
+      message: "Password updated successfully"
+    });
+  } catch (e) {
+    return res.status(500).json({
+      status: "ERR",
+      message: "An error occurred while changing the password: " + e.message
+    });
+  }
+};
+
 module.exports = {
   createUser,
   loginUser,
-  // logoutUser,
+  changePassword,
   updateUser,
   deleteUser,
   deleteManyUser,
   getAllUser,
   getDetailsUser,
-  refreshToken
+  refreshToken,
+  requestPasswordReset
 };

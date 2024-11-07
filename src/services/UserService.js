@@ -1,37 +1,47 @@
 const User = require("../models/UserModel");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const OTPService = require("./OtpService");
+
+const TempUser = require("../models/tempUserModel");
 const { genneralAccessToken, genneralRefreshToken } = require("./JwtService");
 
 const createUser = (newUser) => {
   return new Promise(async (resolve, reject) => {
-    const { name, email, password, confirmPassword, phone } = newUser;
+    const { name, email, password, phone } = newUser;
 
     try {
-      const checkUser = await User.findOne({
-        email: email
-      });
-      if (checkUser != null) {
-        resolve({
-          status: "Oke",
-          message: "Email is already"
+      const checkUser = await User.findOne({ email });
+      if (checkUser) {
+        return resolve({
+          status: "ERR",
+          message: "The email is already in use"
         });
       }
+
       const hash = bcrypt.hashSync(password, 10);
-      const createdUser = await User.create({
+
+      const otpToken = await OTPService.sendMailWithOTP(email);
+
+      const savedTempUser = await TempUser.create({
         name,
         email,
         password: hash,
-        phone
+        phone,
+        isAdmin: false,
+        otpToken
       });
-      if (createdUser) {
-        resolve({
-          status: "Oke",
-          massage: "Success"
-          // data: createdUser
-        });
-      }
+
+      resolve({
+        status: "OK",
+        message: "OTP has been sent to your email. Please verify.",
+        tempUser: savedTempUser
+      });
     } catch (e) {
-      reject(e);
+      reject({
+        status: "ERR",
+        message: "Error occurred during user registration: " + e.message
+      });
     }
   });
 };
@@ -69,12 +79,12 @@ const loginUser = (userLogin) => {
         id: checkUser.id,
         isAdmin: checkUser.isAdmin
       });
-
-      // console.log("access_token", access_token);
+      const name = checkUser.name;
+      const phone = checkUser.phone;
       resolve({
         status: "Oke",
         massage: "Success",
-        dataUser: { id, email, password, isAdmin },
+        dataUser: { id, name, email, password, isAdmin, phone },
         access_token,
         refresh_token
       });
@@ -87,26 +97,38 @@ const loginUser = (userLogin) => {
 const updateUser = (id, data) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const checkUser = await User.findOne({
-        _id: id
-      });
-      if (checkUser === null) {
-        resolve({
-          status: "Oke",
-          message: "User is not defined"
-        });
-      } else {
-        const updatedUser = await User.findByIdAndUpdate(id, data, {
-          new: true
-        });
-        resolve({
-          status: "Oke",
-          message: "Success",
-          data: updatedUser
+      const checkUser = await User.findOne({ _id: id });
+
+      if (!checkUser) {
+        return resolve({
+          status: "Error",
+          message: "User not found"
         });
       }
+
+      const updatedUser = await User.findByIdAndUpdate(id, data, {
+        new: true,
+        runValidators: true
+      });
+
+      if (!updatedUser) {
+        return resolve({
+          status: "Error",
+          message: "Update failed"
+        });
+      }
+
+      return resolve({
+        status: "Success",
+        message: "User updated successfully",
+        data: updatedUser
+      });
     } catch (e) {
-      reject(e);
+      reject({
+        status: "Error",
+        message: "An error occurred while updating the user",
+        error: e
+      });
     }
   });
 };

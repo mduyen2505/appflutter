@@ -16,8 +16,8 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 const uploadProductImages = upload.fields([
-  { name: "image", maxCount: 1 },
-  { name: "banner", maxCount: 1 }
+  { name: "image", maxCount: 2 },
+  { name: "banner", maxCount: 2 }
 ]);
 
 const createProduct = async (req, res) => {
@@ -74,70 +74,97 @@ const createProduct = async (req, res) => {
 };
 
 const updateProduct = async (req, res) => {
-  console.log({ ...req.body });
+  const dataUpdate = { ...req.body };
+
+  if (
+    Object.keys(dataUpdate).length === 0 &&
+    (!req.files || Object.keys(req.files).length === 0)
+  ) {
+    return res.status(400).send({ message: "Không có dữ liệu" });
+  }
 
   try {
     const productId = req.params.id;
     if (!productId) {
       return res.status(400).json({
         status: "ERR",
-        message: "The productId is required."
+        message: "Product ID is required."
       });
     }
 
-    const dataUpdate = { ...req.body };
-    if (req.files) {
-      if (req.files["image"] && req.files["image"].length > 0) {
-        const imageFile = req.files["image"][0];
-        const imageFileName = `${Date.now()}-${imageFile.originalname}`;
-        const fileUpload = bucket.file(imageFileName);
-        const token = uuidv4();
+    // Cập nhật imageUrl nếu có file mới
+    if (req.files && req.files["image"] && req.files["image"].length > 0) {
+      const imageFile = req.files["image"][0];
+      const imageFileName = `${Date.now()}-${imageFile.originalname}`;
+      const fileUpload = bucket.file(imageFileName);
+      const token = uuidv4();
 
-        await fileUpload.save(imageFile.buffer, {
-          contentType: imageFile.mimetype,
-          metadata: {
-            firebaseStorageDownloadTokens: token
-          }
-        });
+      await fileUpload.save(imageFile.buffer, {
+        contentType: imageFile.mimetype,
+        metadata: {
+          firebaseStorageDownloadTokens: token
+        }
+      });
 
-        data.imageUrl = `https://firebasestorage.googleapis.com/v0/b/${
-          process.env.REACT_APP_FIREBASE_STORAGE_BUCKET
-        }/o/${encodeURIComponent(imageFileName)}?alt=media&token=${token}`;
-      }
+      dataUpdate.imageUrl = `https://firebasestorage.googleapis.com/v0/b/${
+        process.env.REACT_APP_FIREBASE_STORAGE_BUCKET
+      }/o/${encodeURIComponent(imageFileName)}?alt=media&token=${token}`;
+    }
 
-      if (req.files["banner"] && req.files["banner"].length > 0) {
-        const bannerFile = req.files["banner"][0];
-        const bannerFileName = `${Date.now()}-${bannerFile.originalname}`;
-        const fileUpload = bucket.file(bannerFileName);
-        const bannerToken = uuidv4();
+    // Cập nhật bannerUrl nếu có file mới
+    if (req.files && req.files["banner"] && req.files["banner"].length > 0) {
+      const bannerFile = req.files["banner"][0];
+      const bannerFileName = `${Date.now()}-${bannerFile.originalname}`;
+      const fileUpload = bucket.file(bannerFileName);
+      const bannerToken = uuidv4();
 
-        await fileUpload.save(bannerFile.buffer, {
-          contentType: bannerFile.mimetype,
-          metadata: {
-            firebaseStorageDownloadTokens: bannerToken
-          }
-        });
+      await fileUpload.save(bannerFile.buffer, {
+        contentType: bannerFile.mimetype,
+        metadata: {
+          firebaseStorageDownloadTokens: bannerToken
+        }
+      });
 
-        data.bannerUrl = `https://firebasestorage.googleapis.com/v0/b/${
-          process.env.REACT_APP_FIREBASE_STORAGE_BUCKET
-        }/o/${encodeURIComponent(
-          bannerFileName
-        )}?alt=media&token=${bannerToken}`;
-      }
+      dataUpdate.bannerUrl = `https://firebasestorage.googleapis.com/v0/b/${
+        process.env.REACT_APP_FIREBASE_STORAGE_BUCKET
+      }/o/${encodeURIComponent(bannerFileName)}?alt=media&token=${bannerToken}`;
+    }
+
+    // Xử lý nếu không có file mới, loại bỏ URL không cập nhật
+    if (typeof dataUpdate.imageUrl !== "string") {
+      delete dataUpdate.imageUrl;
+    }
+    if (typeof dataUpdate.bannerUrl !== "string") {
+      delete dataUpdate.bannerUrl;
     }
 
     const result = await ProductService.updateProduct(productId, dataUpdate);
 
-    res.status(200).json(result);
+    if (result.status === "ERR") {
+      return res.status(404).json(result);
+    }
+
+    return res.status(200).json(result);
   } catch (error) {
     console.error("Error updating product:", error);
-    res.status(500).json({
+    return res.status(500).json({
       status: "ERR",
       message: "Error updating product",
       error: error.message
     });
   }
 };
+
+const express = require("express");
+const app = express();
+app.put(
+  "/api/product/update/:id",
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "banner", maxCount: 1 }
+  ]),
+  updateProduct
+);
 
 const deleteProduct = async (req, res) => {
   try {

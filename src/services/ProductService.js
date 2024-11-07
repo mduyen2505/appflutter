@@ -24,11 +24,11 @@ const createProduct = async (newProduct) => {
 
   try {
     const createdProduct = await Product.create({
-      name: name || "", // Nếu không có tên thì để trống
-      quantityInStock: quantityInStock || 0, // Nếu không có thì mặc định là 0
-      prices: prices || 0, // Nếu không có thì mặc định là 0
-      imageUrl: imageUrl || "", // Nếu không có thì để trống
-      bannerUrl: bannerUrl || "", // Nếu không có thì để trống
+      name: name || "",
+      quantityInStock: quantityInStock || 0,
+      prices: prices || 0,
+      imageUrl: imageUrl || "",
+      bannerUrl: bannerUrl || "",
       productsTypeName: productsTypeName || "",
       inches: inches || "",
       screenResolution: screenResolution || "",
@@ -134,11 +134,10 @@ const getAllProduct = async (sort, filter) => {
 
       const allProducts = await Product.find(query).sort(sort ? sort : {});
 
-      // Không cần kiểm tra với fs.existsSync() nếu bạn đang sử dụng URL từ Firebase
       const formattedProducts = allProducts.map((product) => {
         return {
           ...product.toObject(),
-          imageUrl: product.imageUrl || null, // Chỉ cần lấy URL từ MongoDB
+          imageUrl: product.imageUrl || null,
           bannerUrl: product.bannerUrl || null
         };
       });

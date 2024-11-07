@@ -6,42 +6,62 @@ const addOrUpdateProductInCart = async (req, res) => {
   try {
     const { userId, productId, quantity } = req.body;
 
-    // Kiểm tra đầu vào
     if (!userId || !productId || !quantity) {
-      return res.status(400).json({ status: "ERR", message: "userId, productId, and quantity are required" });
+      return res.status(400).json({
+        status: "ERR",
+        message: "userId, productId, and quantity are required"
+      });
     }
 
-    // Gọi Service
-    const response = await CartService.addOrUpdateProductInCart(userId, productId, quantity);
-    res.status(200).json({ status: "OK", message: "Cart updated successfully", data: response });
+    const response = await CartService.addOrUpdateProductInCart(
+      userId,
+      productId,
+      quantity
+    );
+    res.status(200).json({
+      status: "OK",
+      message: "Cart updated successfully",
+      data: response
+    });
   } catch (error) {
     console.error("Error in addOrUpdateProductInCart Controller:", error);
-    res.status(error.status || 500).json({ status: "ERR", message: error.message || "Internal server error" });
+    res.status(error.status || 500).json({
+      status: "ERR",
+      message: error.message || "Internal server error"
+    });
   }
 };
 
 const UpdateProductInCart = async (req, res) => {
   try {
-    const { userId, productId, quantity } = req.body;
+    const { userId, productId } = req.body;
 
-    // Kiểm tra đầu vào
-    if (!userId || !productId || !quantity) {
-      return res.status(400).json({ status: "ERR", message: "userId, productId, and quantity are required" });
+    if (!userId || !productId) {
+      return res.status(400).json({
+        status: "ERR",
+        message: "userId and productId are required"
+      });
     }
 
-    // Gọi Service
-    const response = await CartService.UpdateProductInCart(userId, productId, quantity);
-    res.status(200).json({ status: "OK", message: "Cart updated successfully", data: response });
+    const cartData = await CartService.UpdateProductInCart(userId, productId);
+
+    res.status(200).json({
+      status: "OK",
+      message: "Product quantity decreased by 1",
+      data: cartData
+    });
   } catch (error) {
-    console.error("Error in addOrUpdateProductInCart Controller:", error);
-    res.status(error.status || 500).json({ status: "ERR", message: error.message || "Internal server error" });
+    console.error("Error in DecreaseProductQuantityController:", error);
+    res.status(error.status || 500).json({
+      status: "ERR",
+      message: error.message || "Internal server error"
+    });
   }
 };
 
 const getCartByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log(userId);
 
     if (!userId) {
       return res.status(400).json({
@@ -73,7 +93,6 @@ const removeProductFromCart = async (req, res) => {
 
 const deleteCart = async (req, res) => {
   const { userId } = req.params;
-  console.log(userId);
   try {
     const response = await CartService.deleteCart(userId);
     return res.status(200).json(response);
