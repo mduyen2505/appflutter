@@ -27,7 +27,10 @@ const createProduct = async (req, res) => {
     if (req.files) {
       if (req.files["image"] && req.files["image"].length > 0) {
         const imageFile = req.files["image"][0];
-        const imageFileName = `${Date.now()}-${imageFile.originalname}`;
+        const folderName = "DACN/products";
+        const imageFileName = `${folderName}/${Date.now()}-${
+          imageFile.originalname
+        }`;
         const fileUpload = bucket.file(imageFileName);
         const token = uuidv4();
 
@@ -45,7 +48,11 @@ const createProduct = async (req, res) => {
 
       if (req.files["banner"] && req.files["banner"].length > 0) {
         const bannerFile = req.files["banner"][0];
-        const bannerFileName = `${Date.now()}-${bannerFile.originalname}`;
+        const folderName = "DACN/banner";
+        const bannerFileName = `${folderName}/${Date.now()}-${
+          bannerFile.originalname
+        }`;
+
         const fileUpload = bucket.file(bannerFileName);
         const bannerToken = uuidv4();
 
@@ -92,10 +99,12 @@ const updateProduct = async (req, res) => {
       });
     }
 
-    // Cập nhật imageUrl nếu có file mới
     if (req.files && req.files["image"] && req.files["image"].length > 0) {
       const imageFile = req.files["image"][0];
-      const imageFileName = `${Date.now()}-${imageFile.originalname}`;
+      const folderName = "DACN/products";
+      const imageFileName = `${folderName}/${Date.now()}-${
+        imageFile.originalname
+      }`;
       const fileUpload = bucket.file(imageFileName);
       const token = uuidv4();
 
@@ -111,10 +120,12 @@ const updateProduct = async (req, res) => {
       }/o/${encodeURIComponent(imageFileName)}?alt=media&token=${token}`;
     }
 
-    // Cập nhật bannerUrl nếu có file mới
     if (req.files && req.files["banner"] && req.files["banner"].length > 0) {
       const bannerFile = req.files["banner"][0];
-      const bannerFileName = `${Date.now()}-${bannerFile.originalname}`;
+      const folderName = "DACN/banner";
+      const bannerFileName = `${folderName}/${Date.now()}-${
+        bannerFile.originalname
+      }`;
       const fileUpload = bucket.file(bannerFileName);
       const bannerToken = uuidv4();
 
@@ -130,7 +141,6 @@ const updateProduct = async (req, res) => {
       }/o/${encodeURIComponent(bannerFileName)}?alt=media&token=${bannerToken}`;
     }
 
-    // Xử lý nếu không có file mới, loại bỏ URL không cập nhật
     if (typeof dataUpdate.imageUrl !== "string") {
       delete dataUpdate.imageUrl;
     }

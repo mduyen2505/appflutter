@@ -57,7 +57,7 @@ class OTPService {
   async sendResetPasswordOTP(email) {
     const token = this.generateRandomToken(60, 100);
 
-    const otpToken = token.slice(0, 8);
+    const otpToken = token.slice(0, 16);
 
     const subject = "HD TECH gửi đến bạn mật khẩu mới";
     const mailForm = mail(otpToken, subject);
