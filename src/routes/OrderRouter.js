@@ -5,10 +5,13 @@ const { authUserMiddleWare } = require("../middleware/authMiddleware");
 
 router.post("/create", orderController.createOrderController);
 router.get("/get/:orderId", orderController.getOrderByIdController);
-router.put('/cancel', orderController.cancelOrderController);
+router.get("/getAll/:userId", orderController.getAllOrdersByUserController);
+
+router.put("/cancel", orderController.cancelOrderController);
+
 // Route để admin xác nhận đơn hàng (chuyển từ Pending sang Shipped)
-router.put('/ship', orderController.shipOrderController);
+router.put("/ship", orderController.shipOrderController);
 // Route để người dùng xác nhận đã nhận hàng (chuyển từ Shipped sang Delivered)
-router.put('/deliver', orderController.deliverOrderController);
+router.put("/deliver", orderController.deliverOrderController);
 
 module.exports = router;
