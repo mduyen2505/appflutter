@@ -53,9 +53,10 @@ const createOrder = async (
     );
 
     // Tính toán phí vận chuyển (Ví dụ: miễn phí vận chuyển nếu đơn hàng trên 1000)
-    const shippingFee = totalPrice > 50000000 ? 0 : 200000;
+    const VATorder = totalPrice * 0.08;
+    const shippingFee = totalPrice > 50000000 ? 0 : 800000;
     const orderTotal = totalPrice + shippingFee;
-
+    console.log(VATorder);
     // Tạo đơn hàng mới
     const newOrder = new Order({
       name,
@@ -66,6 +67,7 @@ const createOrder = async (
       products,
       shippingAddress,
       totalPrice,
+      VATorder,
       shippingFee,
       orderTotal,
       status: "Pending"

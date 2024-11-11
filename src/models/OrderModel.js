@@ -32,6 +32,7 @@ const orderSchema = new mongoose.Schema(
     },
     totalPrice: { type: Number, required: true },
     shippingFee: { type: Number, default: 0 },
+    VATorder: { type: Number, default: 0 },
     orderTotal: { type: Number, required: true },
     status: {
       type: String,

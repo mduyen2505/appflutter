@@ -11,15 +11,20 @@ const addOrUpdateProductInCart = async (userId, productId, quantity) => {
 
     // Kiểm tra xem số lượng sản phẩm trong kho có đủ không
     if (quantity > product.quantityInStock) {
-      throw { status: 400, message: `Not enough stock for ${product.name}. Available: ${product.quantityInStock}` };
+      throw {
+        status: 400,
+        message: `Not enough stock for ${product.name}. Available: ${product.quantityInStock}`
+      };
     }
 
     // Lấy giỏ hàng hiện tại của người dùng
     const existingCart = await Cart.findOne({ userId });
-    const cart = existingCart || new Cart({
-      userId,
-      products: []
-    });
+    const cart =
+      existingCart ||
+      new Cart({
+        userId,
+        products: []
+      });
 
     // Tìm sản phẩm trong giỏ hàng
     const productIndex = cart.products.findIndex(
@@ -32,7 +37,10 @@ const addOrUpdateProductInCart = async (userId, productId, quantity) => {
 
       // Kiểm tra xem số lượng mới có vượt quá số lượng trong kho không
       if (newQuantity > product.quantityInStock) {
-        throw { status: 400, message: `Not enough stock for ${product.name}. Available: ${product.quantityInStock}` };
+        throw {
+          status: 400,
+          message: `Not enough stock for ${product.name}. Available: ${product.quantityInStock}`
+        };
       }
 
       cart.products[productIndex].quantity = newQuantity;
@@ -42,17 +50,28 @@ const addOrUpdateProductInCart = async (userId, productId, quantity) => {
     }
 
     // Tính toán lại tổng giá trị giỏ hàng
-    cart.totalPrice = await cart.products.reduce(async (totalPromise, productItem) => {
-      const total = await totalPromise;
-      const productInDB = await Product.findById(productItem.productId);
-      const productPrice = productInDB ? productInDB.prices : 0;
+    cart.totalPrice = await cart.products.reduce(
+      async (totalPromise, productItem) => {
+        const total = await totalPromise;
+        const productInDB = await Product.findById(productItem.productId);
+        const productPrice = productInDB ? productInDB.prices : 0;
 
-      return total + (isNaN(productPrice) || productPrice < 0 ? 0 : productPrice * productItem.quantity);
-    }, Promise.resolve(0));
+        return (
+          total +
+          (isNaN(productPrice) || productPrice < 0
+            ? 0
+            : productPrice * productItem.quantity)
+        );
+      },
+      Promise.resolve(0)
+    );
 
     // Lưu giỏ hàng
     await cart.save();
-    return cart;
+    const populatedCart = await Cart.findById(cart._id).populate(
+      "products.productId"
+    );
+    return populatedCart;
   } catch (error) {
     console.error("Error in addOrUpdateProductInCart service:", error);
     throw { status: 500, message: "Internal server error" };
