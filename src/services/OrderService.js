@@ -52,11 +52,11 @@ const createOrder = async (
       0
     );
 
-    // Tính toán phí vận chuyển (Ví dụ: miễn phí vận chuyển nếu đơn hàng trên 1000)
-    const VATorder = totalPrice * 0.08;
+    // Tính toán phí vận chuyển và VAT
+    const VATorder = totalPrice * 0.1;
     const shippingFee = totalPrice > 50000000 ? 0 : 800000;
     const orderTotal = totalPrice + shippingFee;
-    console.log(VATorder);
+
     // Tạo đơn hàng mới
     const newOrder = new Order({
       name,
@@ -76,12 +76,20 @@ const createOrder = async (
     // Lưu đơn hàng
     await newOrder.save();
 
+    // Cập nhật giỏ hàng bằng cách xóa các sản phẩm hợp lệ
+    cart.products = cart.products.filter(
+      (item) => !productIds.includes(String(item.productId._id))
+    );
+
+    await cart.save();
+
     return newOrder;
   } catch (error) {
     console.error("Lỗi trong createOrder service:", error);
     throw error;
   }
 };
+
 const getAllOrdersByUser = async (userId) => {
   try {
     // Tìm tất cả đơn hàng của người dùng

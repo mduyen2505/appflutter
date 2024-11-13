@@ -5,6 +5,7 @@ const createOrderController = async (req, res) => {
   try {
     const { userId, cartId, shippingAddress, productIds, name, phone, email } =
       req.body;
+
     const selectedProductIds = Array.isArray(productIds)
       ? productIds
       : [productIds];
