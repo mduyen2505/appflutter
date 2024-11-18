@@ -81,7 +81,7 @@ const getOrderByIdController = async (req, res) => {
   const { orderId } = req.params;
   try {
     const order = await Order.findById(orderId).populate("products.productId");
-
+    console.log(order);
     if (!order) {
       return res.status(404).json({
         status: "ERR",
