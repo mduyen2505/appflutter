@@ -1,21 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:HDTech/models/checkout_service.dart';
-import 'package:HDTech/models/checkout_model.dart'; // Đảm bảo import đúng
+import 'package:HDTech/models/checkout_model.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import '../../models/config.dart';
 
 final formatCurrency = NumberFormat.currency(locale: 'vi_VN', symbol: 'VNĐ');
 
-class CheckOutScreen extends StatelessWidget {
-  final String cartId;
+class CheckOutScreen extends StatefulWidget {
+  final String user_Id;
 
-  const CheckOutScreen({Key? key, required this.cartId}) : super(key: key);
+  const CheckOutScreen({super.key, required this.user_Id});
+
+  @override
+  State<CheckOutScreen> createState() => _CheckOutScreenState();
+}
+
+class _CheckOutScreenState extends State<CheckOutScreen> {
+  final TextEditingController nameController =
+      TextEditingController(text: "Nguyễn Văn A");
+  final TextEditingController phoneController =
+      TextEditingController(text: "123456789");
+  final TextEditingController emailController =
+      TextEditingController(text: "example@mail.com");
+  final TextEditingController addressController =
+      TextEditingController(text: "Số 123, Hà Nội");
+
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
-    final userId = cartId; // Lấy userId từ tham số đầu vào
-
     return FutureBuilder<CheckoutDetails>(
-      future: CheckoutService.getCheckoutDetails(userId),
+      future: CheckoutService.getCheckoutDetails(widget.user_Id),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -34,6 +52,9 @@ class CheckOutScreen extends StatelessWidget {
         }
 
         final checkoutDetails = snapshot.data!;
+        final cartId = checkoutDetails.cartId;
+        final productIds =
+            checkoutDetails.products.map((p) => p.productId).toList();
         final totalPrice = checkoutDetails.totalPrice?.toDouble() ?? 0.0;
         final vatOrder = checkoutDetails.vatOrder?.toDouble() ?? 0.0;
         final shippingFee = checkoutDetails.shippingFee?.toDouble() ?? 0.0;
@@ -51,127 +72,249 @@ class CheckOutScreen extends StatelessWidget {
               },
             ),
           ),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Thông tin đơn hàng",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                ),
-                const SizedBox(height: 10),
-                _buildInputField("Tên", controller: TextEditingController(text: "Nguyễn Văn A")),
-                _buildInputField("Số điện thoại", controller: TextEditingController(text: "123456789")),
-                _buildInputField("Email", controller: TextEditingController(text: "example@mail.com")),
-                _buildInputField("Địa chỉ giao hàng", controller: TextEditingController(text: "Số 123, Hà Nội")),
-                const SizedBox(height: 20),
-                const Text(
-                  "Chi tiết đơn hàng",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: checkoutDetails.products.length,
-                    itemBuilder: (context, index) {
-                      final product = checkoutDetails.products[index];
-                      return ListTile(
-                        title: Text(
-                          product.name,
-                          style: const TextStyle(fontSize: 18),
-                        ),
-                        subtitle: Text(
-                          "Số lượng: ${product.quantity}",
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        trailing: Text(
-                          formatCurrency.format(product.total?.toDouble() ?? 0.0), // Sử dụng giá trị mặc định
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const Divider(),
-                _buildSummaryRow("Tổng giá trị", totalPrice),
-                _buildSummaryRow("VAT", vatOrder),
-                _buildSummaryRow("Phí vận chuyển", shippingFee),
-                const Divider(),
-                _buildSummaryRow(
-                  "Tổng cộng",
-                  orderTotal,
-                  isBold: true,
-                  color: Colors.red,
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    _handlePayment(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    minimumSize: const Size(double.infinity, 55),
-                  ),
-                  child: const Text(
-                    "Thanh toán ngay",
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+          body: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Thông tin đơn hàng",
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                     ),
+                    const SizedBox(height: 10),
+                    _buildInputField(
+                      "Tên",
+                      controller: nameController,
+                    ),
+                    _buildInputField(
+                      "Số điện thoại",
+                      controller: phoneController,
+                    ),
+                    _buildInputField(
+                      "Email",
+                      controller: emailController,
+                    ),
+                    _buildInputField(
+                      "Địa chỉ giao hàng",
+                      controller: addressController,
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Chi tiết đơn hàng",
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: checkoutDetails.products.length,
+                        itemBuilder: (context, index) {
+                          final product = checkoutDetails.products[index];
+                          return ListTile(
+                            title: Text(
+                              product.name,
+                              style: const TextStyle(fontSize: 18),
+                            ),
+                            subtitle: Text(
+                              "Số lượng: ${product.quantity}",
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            trailing: Text(
+                              formatCurrency
+                                  .format(product.total?.toDouble() ?? 0.0),
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const Divider(),
+                    _buildSummaryRow("Tổng giá trị", totalPrice),
+                    _buildSummaryRow("VAT", vatOrder),
+                    _buildSummaryRow("Phí vận chuyển", shippingFee),
+                    const Divider(),
+                    _buildSummaryRow(
+                      "Tổng cộng",
+                      orderTotal,
+                      isBold: true,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () => _handlePayment(context, cartId, productIds),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        minimumSize: const Size(double.infinity, 55),
+                      ),
+                      child: Text(
+                        isLoading ? "Đang xử lý..." : "Thanh toán ngay",
+                        style: const TextStyle(
+                          fontSize: 20,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isLoading)
+                const Positioned.fill(
+                  child: Center(
+                    child: CircularProgressIndicator(),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildInputField(String labelText, {TextEditingController? controller}) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: labelText,
-        labelStyle: const TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+  Widget _buildInputField(String labelText,
+      {TextEditingController? controller}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: const TextStyle(color: Colors.grey),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       ),
     );
   }
 
-  Widget _buildSummaryRow(String label, double? value, {bool isBold = false, Color? color}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+  Widget _buildSummaryRow(String label, double? value,
+      {bool isBold = false, Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            ),
           ),
-        ),
-        Text(
-          formatCurrency.format(value ?? 0.0), // Sử dụng giá trị mặc định nếu value là null
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: color,
+          Text(
+            formatCurrency.format(value ?? 0.0),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: color,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  void _handlePayment(BuildContext context) {
-    // Xử lý thanh toán
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Chức năng thanh toán chưa được triển khai')),
-    );
+  Future<void> _handlePayment(
+      BuildContext context, String cartId, List<String> productIds) async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      // Get the checkout details to include in the order
+      final checkoutDetails =
+          await CheckoutService.getCheckoutDetails(widget.user_Id);
+
+      // Prepare the products array according to schema
+      final products = checkoutDetails.products
+          .map((product) => {
+                'productId': product.productId,
+                'quantity': product.quantity,
+              })
+          .toList();
+
+      // Prepare shipping address object according to schema
+      final shippingAddress = {
+        'address': addressController.text,
+        'city': '', // Add city field to your UI if needed
+        'country': '', // Add country field to your UI if needed
+      };
+
+      final url = Uri.parse('${Config.baseUrl}/order/create');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'userId': widget.user_Id,
+          'cartId': cartId,
+          'products': products,
+          'name': nameController.text,
+          'phone': phoneController.text,
+          'email': emailController.text,
+          'shippingAddress': shippingAddress,
+          'totalPrice': checkoutDetails.totalPrice,
+          'shippingFee': checkoutDetails.shippingFee,
+          'VATorder': checkoutDetails.vatOrder,
+          'orderTotal': checkoutDetails.orderTotal,
+          'status': 'Pending' // Default status as defined in schema
+        }),
+      );
+
+      setState(() {
+        isLoading = false;
+      });
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData['status'] == 'OK') {
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đặt hàng thành công!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navigate back to home or order confirmation screen
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else {
+          throw Exception(responseData['message'] ?? 'Đặt hàng thất bại');
+        }
+      } else {
+        throw Exception('Đặt hàng thất bại');
+      }
+    } catch (error) {
+      setState(() {
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
+    emailController.dispose();
+    addressController.dispose();
+    super.dispose();
   }
 }
