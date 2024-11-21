@@ -111,8 +111,8 @@ class PopularComputerBarState extends State<PopularComputerBar> {
               ),
               elevation: 5,
               backgroundColor: Colors.white,
-              contentPadding: const EdgeInsets.all(
-                  20), // Thêm padding cho nội dung hộp thoại
+              contentPadding: const EdgeInsets.all(20),
+              // Thêm padding cho nội dung hộp thoại
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -297,7 +297,8 @@ class PopularComputerBarState extends State<PopularComputerBar> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8.0),
                                     child: Text(
-                                      '${computer.company} ${computer.name}', // Concatenate productsTypeName and name
+                                      '${computer.company} ${computer.name}',
+                                      // Concatenate productsTypeName and name
                                       style: const TextStyle(
                                         fontSize: 17,
                                         fontWeight: FontWeight.bold,

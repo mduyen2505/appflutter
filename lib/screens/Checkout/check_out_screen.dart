@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:HDTech/models/checkout_service.dart'; 
+import 'package:HDTech/models/checkout_service.dart';
 import 'package:HDTech/models/checkout_model.dart'; // Đảm bảo import đúng
 
 final formatCurrency = NumberFormat.currency(locale: 'vi_VN', symbol: 'VNĐ');
@@ -12,7 +12,7 @@ class CheckOutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userId = "user_id";  // Lấy userId từ context hoặc provider
+    final userId = cartId; // Lấy userId từ tham số đầu vào
 
     return FutureBuilder<CheckoutDetails>(
       future: CheckoutService.getCheckoutDetails(userId),
@@ -34,6 +34,10 @@ class CheckOutScreen extends StatelessWidget {
         }
 
         final checkoutDetails = snapshot.data!;
+        final totalPrice = checkoutDetails.totalPrice?.toDouble() ?? 0.0;
+        final vatOrder = checkoutDetails.vatOrder?.toDouble() ?? 0.0;
+        final shippingFee = checkoutDetails.shippingFee?.toDouble() ?? 0.0;
+        final orderTotal = checkoutDetails.orderTotal?.toDouble() ?? 0.0;
 
         return Scaffold(
           appBar: AppBar(
@@ -82,7 +86,7 @@ class CheckOutScreen extends StatelessWidget {
                           style: const TextStyle(fontSize: 16),
                         ),
                         trailing: Text(
-                          formatCurrency.format(product.total),
+                          formatCurrency.format(product.total?.toDouble() ?? 0.0), // Sử dụng giá trị mặc định
                           style: const TextStyle(fontSize: 16),
                         ),
                       );
@@ -90,20 +94,19 @@ class CheckOutScreen extends StatelessWidget {
                   ),
                 ),
                 const Divider(),
-                _buildSummaryRow("Tổng giá trị", checkoutDetails.totalPrice),
-                _buildSummaryRow("VAT", checkoutDetails.vatOrder),
-                _buildSummaryRow("Phí vận chuyển", checkoutDetails.shippingFee),
+                _buildSummaryRow("Tổng giá trị", totalPrice),
+                _buildSummaryRow("VAT", vatOrder),
+                _buildSummaryRow("Phí vận chuyển", shippingFee),
                 const Divider(),
                 _buildSummaryRow(
                   "Tổng cộng",
-                  checkoutDetails.orderTotal,
+                  orderTotal,
                   isBold: true,
                   color: Colors.red,
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
-                    // Xử lý thanh toán
                     _handlePayment(context);
                   },
                   style: ElevatedButton.styleFrom(
@@ -142,7 +145,7 @@ class CheckOutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryRow(String label, double value, {bool isBold = false, Color? color}) {
+  Widget _buildSummaryRow(String label, double? value, {bool isBold = false, Color? color}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -154,7 +157,7 @@ class CheckOutScreen extends StatelessWidget {
           ),
         ),
         Text(
-          formatCurrency.format(value),
+          formatCurrency.format(value ?? 0.0), // Sử dụng giá trị mặc định nếu value là null
           style: TextStyle(
             fontSize: 16,
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
