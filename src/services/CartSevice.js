@@ -80,6 +80,7 @@ const addOrUpdateProductInCart = async (userId, productId, quantity) => {
 
 const UpdateProductInCart = async (userId, productId, quantity) => {
   try {
+    console.log(quantity)
     // Tìm giỏ hàng của người dùng
     const cart = await Cart.findOne({ userId });
     if (!cart) {
@@ -96,11 +97,11 @@ const UpdateProductInCart = async (userId, productId, quantity) => {
     }
 
     // Giảm số lượng sản phẩm xuống 1 đơn vị
-    if (cart.products[productIndex].quantity > 1) {
-      cart.products[productIndex].quantity -= 1;
-    } else {
-      throw { status: 400, message: "Cannot decrease quantity below 1" };
-    }
+    // if (cart.products[productIndex].quantity > 1) {
+      cart.products[productIndex].quantity = quantity;
+    // } else {
+    //   throw { status: 400, message: "Cannot decrease quantity below 1" };
+    // }
 
     // Tính toán lại tổng giá (`totalPrice`)
     cart.totalPrice = await cart.products.reduce(
@@ -138,8 +139,9 @@ const getCartByUserId = async (userId) => {
   try {
     const cart = await Cart.findOne({ userId }).populate(
       "products.productId",
-      "name prices "
-    );
+      "name prices imageUrl company quantityInStock"
+    ); 
+
     if (!cart) {
       console.log("Không tìm thấy giỏ hàng");
     }

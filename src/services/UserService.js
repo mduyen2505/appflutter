@@ -49,10 +49,12 @@ const createUser = (newUser) => {
 const loginUser = (userLogin) => {
   return new Promise(async (resolve, reject) => {
     const { email, password } = userLogin;
+
     try {
       const checkUser = await User.findOne({
         email: email
       });
+      console.log(checkUser)
       const isAdmin = checkUser.isAdmin;
       const id = checkUser._id;
       if (!checkUser) {

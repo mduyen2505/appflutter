@@ -8,7 +8,7 @@ const bcrypt = require("bcrypt");
 const createUser = async (req, res) => {
   try {
     const { name, email, password, confirmPassword, phone } = req.body;
-
+    console.log(req.body)
     if (!name || !email || !password || !confirmPassword || !phone) {
       return res.status(400).json({
         status: "ERR",

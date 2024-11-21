@@ -34,7 +34,9 @@ const addOrUpdateProductInCart = async (req, res) => {
 
 const UpdateProductInCart = async (req, res) => {
   try {
-    const { userId, productId } = req.body;
+    const { userId, productId } = req.params;
+    console.log(userId)
+    const { quantity } = req.body;
 
     if (!userId || !productId) {
       return res.status(400).json({
@@ -43,12 +45,12 @@ const UpdateProductInCart = async (req, res) => {
       });
     }
 
-    const cartData = await CartService.UpdateProductInCart(userId, productId);
+    const cartData = await CartService.UpdateProductInCart(userId, productId, quantity);
 
     res.status(200).json({
-      status: "OK",
+      status: "OK", 
       message: "Product quantity decreased by 1",
-      data: cartData
+      data: cartData 
     });
   } catch (error) {
     console.error("Error in DecreaseProductQuantityController:", error);
