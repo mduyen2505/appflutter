@@ -26,7 +26,7 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
   final TextEditingController emailController =
       TextEditingController(text: "example@mail.com");
   final TextEditingController addressController =
-      TextEditingController(text: "Số 123, Hà Nội");
+      TextEditingController(text: "Số 123, Hà Nội, Việt Nam");
 
   bool isLoading = false;
 
@@ -232,21 +232,16 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
 
       // Get the checkout details to include in the order
       final checkoutDetails =
-          await CheckoutService.getCheckoutDetails(widget.user_Id);
+      await CheckoutService.getCheckoutDetails(widget.user_Id);
 
-      // Prepare the products array according to schema
-      final products = checkoutDetails.products
-          .map((product) => {
-                'productId': product.productId,
-                'quantity': product.quantity,
-              })
-          .toList();
+      // Split address by comma and trim whitespace
+      final addressParts = addressController.text.split(',').map((e) => e.trim()).toList();
 
       // Prepare shipping address object according to schema
       final shippingAddress = {
-        'address': addressController.text,
-        'city': '', // Add city field to your UI if needed
-        'country': '', // Add country field to your UI if needed
+        'address': addressParts.isNotEmpty ? addressParts[0] : '',
+        'city': addressParts.length > 1 ? addressParts[1] : '',
+        'country': addressParts.length > 2 ? addressParts[2] : 'Việt Nam',
       };
 
       final url = Uri.parse('${Config.baseUrl}/order/create');
@@ -259,7 +254,7 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
         body: json.encode({
           'userId': widget.user_Id,
           'cartId': cartId,
-          'products': products,
+          'productIds': productIds,
           'name': nameController.text,
           'phone': phoneController.text,
           'email': emailController.text,
@@ -268,7 +263,7 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
           'shippingFee': checkoutDetails.shippingFee,
           'VATorder': checkoutDetails.vatOrder,
           'orderTotal': checkoutDetails.orderTotal,
-          'status': 'Pending' // Default status as defined in schema
+          'status': 'Pending'
         }),
       );
 
