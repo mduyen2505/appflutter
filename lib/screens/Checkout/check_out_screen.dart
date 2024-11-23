@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import '../../models/config.dart';
+import '../ResultOrder/ResultOrder.dart';
 
 final formatCurrency = NumberFormat.currency(locale: 'vi_VN', symbol: 'VNĐ');
 
@@ -232,10 +233,11 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
 
       // Get the checkout details to include in the order
       final checkoutDetails =
-      await CheckoutService.getCheckoutDetails(widget.user_Id);
+          await CheckoutService.getCheckoutDetails(widget.user_Id);
 
       // Split address by comma and trim whitespace
-      final addressParts = addressController.text.split(',').map((e) => e.trim()).toList();
+      final addressParts =
+          addressController.text.split(',').map((e) => e.trim()).toList();
 
       // Prepare shipping address object according to schema
       final shippingAddress = {
@@ -274,16 +276,12 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'OK') {
-          // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Đặt hàng thành công!'),
-              backgroundColor: Colors.green,
+          // Navigate to ResultOrder screen
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const ResultOrder(),
             ),
           );
-
-          // Navigate back to home or order confirmation screen
-          Navigator.of(context).popUntil((route) => route.isFirst);
         } else {
           throw Exception(responseData['message'] ?? 'Đặt hàng thất bại');
         }
